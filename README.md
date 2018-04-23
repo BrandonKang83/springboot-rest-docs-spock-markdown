@@ -4,6 +4,12 @@
 
 ## Markdown 적용
 
+slate 모듈 받기
+
+```bash
+wget https://github.com/lord/slate/archive/master.zip;unzip master.zip;mv ./slate-master ./slate;rm ./master.zip
+```
+
 ## bundle Permission Denied 문제
 
 ```bash
