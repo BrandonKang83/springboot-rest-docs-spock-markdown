@@ -10,6 +10,15 @@ slate 모듈 받기
 wget https://github.com/lord/slate/archive/master.zip;unzip master.zip;mv ./slate-master ./slate;rm ./master.zip
 ```
 
+필요없는 파일 및 디렉토리
+
+* ```.github```
+* ```.travis.yml```
+* ```.editorconfig```
+* ```CODE_OF_CONDUCT.md```
+
+필요없으니 삭제하셔도 됩니다.
+
 ## bundle Permission Denied 문제
 
 ```bash
