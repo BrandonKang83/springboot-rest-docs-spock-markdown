@@ -1,66 +1,156 @@
-# Spring Boot Rest Docs & Spock & Markdown & Rest Assured 적용하기
+# Spring Rest Docs & Spock & Rest Assured & Markdown 적용하기
 
+팀의 API 문서 자동화를 위해 [Spring Rest Docs](https://docs.spring.io/spring-restdocs/docs/current/reference/html5/)를 적용해보기로 했습니다.  
+Spring Boot Rest Docs의 기본 조합인 Mock MVC & Asciidoc 을 사용하지 않고, Spock & Rest Assured & Markdown을 써야겠다고 생각했는데요.  
 
+* 이미 Groovy & Spock 기반으로 동적 언어로 테스트 코드 작성이 익숙한 상태
+  * 문서화를 위해 테스트 프레임워크를 변경하는건 배보다 배꼽이 크다는 생각
+* Mock MVC보다는 Rest Assured가 API 테스트 코드에 좀 더 직관적
+* 팀내 위키를 비롯한 많은 문서들이 Markdown 기반으로 진행
+  * Asciidoc을 별도로 다 익혀야 하는건 낭비라고 생각
 
-## Markdown 적용
+> 이번 포스팅은 Spring Rest Docs를 마크다운으로 관리하기이지만, 끝까지 읽어보시면 **귀찮더라도 Asciidoc을 배워서 쓰자**란 결론이 나오실 것 같습니다.  
+저는 그냥 Asciidoc을 써야겠다고 생각했습니다. ㅠㅠ
 
-slate 모듈 받기
-
-```bash
-wget https://github.com/lord/slate/archive/master.zip;unzip master.zip;mv ./slate-master ./slate;rm ./master.zip
-```
-
-필요없는 파일 및 디렉토리
-
-* ```.github```
-* ```.travis.yml```
-* ```.editorconfig```
-* ```CODE_OF_CONDUCT.md```
-
-필요없으니 삭제하셔도 됩니다.
-
-## bundle Permission Denied 문제
-
-```bash
-brew install rbenv
-```
-설치 가능한 루비 버전 목록을 확인합니다.
-
-```bash
-rbenv install -l
-```
-
-현재 최신 버전 (2018.04.22)이 2.5.0이므로 2.5.1을 설치합니다.
-
-```bash
-rbenv install 2.5.1 && rbenv rehash
-```
-
-여기서 본인이 사용하는 쉘에 따라 다른 방식을 취해야합니다.  
+모든 코드는 [Github](https://github.com/jojoldu/springboot-rest-docs-spock-markdown)에 있으니 참고하시면 좋을것 같습니다.  
   
-**bash**
+프로젝트 환경은 스프링부트 2.0.1, Gradle 기반입니다.
 
-```bash
-echo 'eval "$(rbenv init -)"' >> ~/.bash_profile
+## 1. 프로젝트 생성
 
-# 반영
-source ~/.bash_profile
+프로젝트를 생성하시고 build.gradle을 다음과 같이 작성합니다.  
+먼저 Rest Assured를 위한 의존성들을 추가합니다.
+
+```groovy
+...
+dependencies {
+    ...
+    testCompile('io.rest-assured:rest-assured:3.0.2') // for rest assured
+    testCompile('org.springframework.restdocs:spring-restdocs-restassured') // for rest assured
+    ...
+}
 ```
 
-**zsh**
+spock을 위한 의존성과 플러그인을 설치합니다.
 
-```bash
-# ~/.zshrc을 열어
-vim ~/.zshrc
+```groovy
+...
+apply plugin: 'groovy' // for spock
+...
+dependencies {
+    ...
+    testCompile('org.spockframework:spock-core:1.1-groovy-2.4') // for spock
+    testCompile('org.spockframework:spock-spring:1.1-groovy-2.4') //for spock
+}
 
-# 제일 하단에 다음과 같이 추가
-
-export PATH="$HOME/.rbenv/bin:$PATH"
-eval "$(rbenv init -)"
-
-# 반영
-source ~/.zshrc
 ```
+
+마지막으로 Markdown으로 Rest Docs를 작성할 수 있게 Gradle Task를 추가합니다.
+
+
+```groovy
+...
+ext {
+    snippetsDir = file('build/generated-snippets')
+}
+
+test {
+    outputs.dir snippetsDir // 자동 생성되는 마크다운 파일들이 저장될 장소
+}
+
+task(bundleInstall, type: Exec) {
+    workingDir file('slate')
+    executable 'bundle'
+    args 'install'
+}
+
+task(slate, type: Exec) {
+    dependsOn 'bundleInstall', 'test'
+    workingDir file('slate')
+    executable 'bundle'
+    args 'exec', 'middleman', 'build', '--verbose' // debug mode
+}
+
+build {
+    dependsOn 'slate'
+}
+...
+```
+
+이렇게 하시면 전체 코드는 아래와 같습니다.
+
+```groovy
+buildscript {
+    ext {
+        springBootVersion = '2.0.1.RELEASE'
+    }
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+    }
+}
+
+apply plugin: 'groovy' // for spock
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'org.springframework.boot'
+apply plugin: 'io.spring.dependency-management'
+
+group = 'com.jojoldu'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+ext {
+    snippetsDir = file('build/generated-snippets')
+}
+
+test {
+    outputs.dir snippetsDir // 자동 생성되는 마크다운 파일들이 저장될 장소
+}
+
+task(bundleInstall, type: Exec) {
+    workingDir file('slate')
+    executable 'bundle'
+    args 'install'
+}
+
+task(slate, type: Exec) {
+    dependsOn 'bundleInstall', 'test'
+    workingDir file('slate')
+    executable 'bundle'
+    args 'exec', 'middleman', 'build', '--verbose' // debug mode
+}
+
+build {
+    dependsOn 'slate'
+}
+
+dependencies {
+    compile('org.springframework.boot:spring-boot-starter-data-jpa')
+    compile('org.springframework.boot:spring-boot-starter-web')
+
+    runtime('com.h2database:h2')
+
+    compileOnly('org.projectlombok:lombok')
+
+    testCompile('io.rest-assured:rest-assured:3.0.2') // for rest assured
+    testCompile('org.springframework.restdocs:spring-restdocs-restassured') // for rest assured
+    testCompile('org.springframework.boot:spring-boot-starter-test')
+    testCompile('org.spockframework:spock-core:1.1-groovy-2.4') // for spock
+    testCompile('org.spockframework:spock-spring:1.1-groovy-2.4') //for spock
+}
+
+```
+
+> 참고: Mac에 기본 설치된 Ruby를 이용하시면 **Permission Denied** 문제가 발생할 수 있습니다.  
+그럴 경우 [이전 포스팅](http://jojoldu.tistory.com/288)를 참고해 문제를 해결하시고 계속 진행해주세요.
 
 bundler 설치
 
@@ -74,19 +164,7 @@ bundler 설치가 잘 되셨으면
 10분정도가 소모 됐습니다.  
 두번째 build 부터는 다를수는 있겠지만
 
-## 커맨드
-
-상세 오류 로그 확인
-
-```bash
-# slate 디렉토리로 이동
-cd slate
-
-# middleman 직접 실행
-bundle exec middleman build 
-
-
-```
+## 2. 테스트 코드 작성
 
 ## 참고 
 

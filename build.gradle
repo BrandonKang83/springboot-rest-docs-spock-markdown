@@ -30,7 +30,7 @@ ext {
 }
 
 test {
-    outputs.dir snippetsDir
+    outputs.dir snippetsDir // 자동 생성되는 마크다운 파일들이 저장될 장소
 }
 
 task(bundleInstall, type: Exec) {
