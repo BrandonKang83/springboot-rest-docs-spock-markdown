@@ -15,7 +15,6 @@ public class ResponseDto {
     private String message;
 
     public ResponseDto(HttpStatus status, String message) {
-
         this.status = status;
         this.message = message;
     }

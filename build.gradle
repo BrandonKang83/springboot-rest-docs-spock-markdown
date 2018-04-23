@@ -43,7 +43,7 @@ task(slate, type: Exec) {
     dependsOn 'bundleInstall', 'test'
     workingDir file('slate')
     executable 'bundle'
-    args 'exec', 'middleman', 'build'
+    args 'exec', 'middleman', 'build', '--verbose' // debug mode
 }
 
 build {
@@ -55,11 +55,9 @@ dependencies {
     compile('org.springframework.boot:spring-boot-starter-web')
 
     runtime('com.h2database:h2')
-    runtime 'org.atteo:evo-inflector:1.2.1'
 
     compileOnly('org.projectlombok:lombok')
 
-    testCompile('com.jayway.jsonpath:json-path')
     testCompile('io.rest-assured:rest-assured:3.0.2') // for rest assured
     testCompile('org.springframework.restdocs:spring-restdocs-restassured') // for rest assured
     testCompile('org.springframework.boot:spring-boot-starter-test')

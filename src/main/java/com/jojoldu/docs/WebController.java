@@ -21,7 +21,7 @@ public class WebController {
     }
 
     @PostMapping(value = "/email")
-    public String process(@RequestBody final RequestDto requestDto) {
-        return requestDto.getEmail();
+    public ResponseDto process(@RequestBody final RequestDto requestDto) {
+        return new ResponseDto(HttpStatus.OK, requestDto.getEmail());
     }
 }

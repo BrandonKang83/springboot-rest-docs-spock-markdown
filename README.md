@@ -59,6 +59,19 @@ bundler 설치가 잘 되셨으면
 10분정도가 소모 됐습니다.  
 두번째 build 부터는 다를수는 있겠지만
 
+## 커맨드
+
+상세 오류 로그 확인
+
+```bash
+# slate 디렉토리로 이동
+cd slate
+
+# middleman 직접 실행
+bundle exec middleman build 
+
+
+```
 
 ## 참고 
 
