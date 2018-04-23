@@ -1,0 +1,80 @@
+---
+title: REST Notes API Guide
+
+language_tabs:
+  - http
+
+search: true
+---
+
+# Overview
+
+
+## HTTP verbs
+
+
+RESTful notes tries to adhere as closely as possible to standard HTTP and REST conventions in its
+use of HTTP verbs.
+
+
+Verb     | Usage
+-------- | -----
+`GET`    | Used to retrieve a resource
+`POST`   | Used to create a new resource
+`PATCH`  | Used to update an existing resource, including partial updates
+`DELETE` | Used to delete an existing resource
+
+## HTTP status codes
+
+RESTful notes tries to adhere as closely as possible to standard HTTP and REST conventions in its
+use of HTTP status codes.
+
+Status code       | Usage
+----------------- | -----
+`200 OK`          | The request completed successfully
+`201 Created`     | A new resource has been created successfully. The resource's URI is available from the response's `Location` header
+`204 No Content`  | An update to an existing resource has been applied successfully
+`400 Bad Request` | The request was malformed. The response body will include an error providing further information
+`404 Not Found`   | The requested resource did not exist
+
+
+## 경로
+
+현재 위치의 절대 경로
+
+<%= File.expand_path("..") %>
+
+## Default Sample
+
+기본 요청
+
+<%= ERB.new(File.read("../build/generated-snippets/default-sample/curl-request.md")).result(binding) %>
+<%= ERB.new(File.read("../build/generated-snippets/default-sample/http-request.md")).result(binding) %>
+<%= ERB.new(File.read("../build/generated-snippets/default-sample/http-response.md")).result(binding) %>
+
+
+### Response structure
+
+<%= ERB.new(File.read("../build/generated-snippets/default-sample/response-fields.md")).result(binding) %>
+<%= ERB.new(File.read("../build/generated-snippets/default-sample/response-body.md")).result(binding) %>
+
+## Email Sample
+
+Email 요청
+
+### Listing notes
+
+<%= ERB.new(File.read("../build/generated-snippets/email-sample/http-request.md")).result(binding) %>
+<%= ERB.new(File.read("../build/generated-snippets/email-sample/http-response.md")).result(binding) %>
+<%= ERB.new(File.read("../build/generated-snippets/email-sample/curl-request.md")).result(binding) %>
+
+A `GET` request will list all of the service's notes.
+response-fields
+#### Response structure
+
+<%= ERB.new(File.read("../build/generated-snippets/email-sample/response-fields.md")).result(binding) %>
+
+#### Request structure
+
+<%= ERB.new(File.read("../build/generated-snippets/email-sample/request-fields.md")).result(binding) %>
+
