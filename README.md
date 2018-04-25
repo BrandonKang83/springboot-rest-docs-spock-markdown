@@ -261,15 +261,180 @@ Method     | Usage
 ```
 
 여기까지만 작성하고 저장한 뒤, 터미널을 열어 ```./gradlew build```를 수행합니다.  
+그러면 아래처럼 slate/build 안에 ```api-guide.html```파일이 생성됩니다.
+
+> 즉, XXX.md.erb 파일에서 XXX란 이름으로 자동생성되는것을 알 수 있습니다.
 
 ![slate3](./images/slate3.png)
 
+이 파일을 열어보시면!
+
 ![slate4](./images/slate4.png)
 
+저희가 작성한 Markdown 내용이 잘 반영된 API 문서를 볼 수 있습니다!  
+대략 어떤 흐름인지 아시겠죠?  
+  
+* build 실행
+* slate가 slate/source/***.md.erb 파일을 기준으로 API 문서 생성
+
+> 나중에 실제 프로젝트로 진행되다면 jar파일로 패키징 되기 전에 slate로 생성된 html파일을 src/main/resources/static 안에 넣어주시면 됩니다.  
+그럼 스프링부트에서 도메인/XXX.html로 URL을 자동으로 매핑해줍니다.
+
+여기까지는 **개발자가 직접 Markdown을 작성한 내용을 자동 문서화** 시켜주었습니다.  
+그럼 이제 테스트 코드를 통해서 문서 자동화를 진행해보겠습니다.
 
 ### 3-2. 테스트 코드 작성
 
-## 4. Build 및 문서 확인
+```groovy
+import io.restassured.builder.RequestSpecBuilder
+import io.restassured.http.ContentType
+import io.restassured.specification.RequestSpecification
+import org.junit.Rule
+import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.web.server.LocalServerPort
+import org.springframework.restdocs.JUnitRestDocumentation
+import org.springframework.restdocs.payload.JsonFieldType
+import spock.lang.Specification
+
+import static io.restassured.RestAssured.given
+import static org.hamcrest.CoreMatchers.is
+import static org.springframework.restdocs.operation.preprocess.Preprocessors.*
+import static org.springframework.restdocs.payload.PayloadDocumentation.*
+import static org.springframework.restdocs.restassured3.RestAssuredRestDocumentation.document
+import static org.springframework.restdocs.restassured3.RestAssuredRestDocumentation.documentationConfiguration
+import static org.springframework.restdocs.templates.TemplateFormats.markdown
+
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+class WebControllerTest extends Specification {
+
+    @Rule
+    public JUnitRestDocumentation restDocumentation = new JUnitRestDocumentation() // 문서 자동생성 규칙을 담은 인스턴스
+
+    private RequestSpecification spec
+
+    @LocalServerPort
+    private int port
+    
+    /**
+        현재 컨트롤러에서 진행되는 모든 테스트 메소드들이 
+        Request 요청시 문서자동화 과정을 거치도록 지정
+    **/
+    void setup() {
+        this.spec = new RequestSpecBuilder()
+                .addFilter(
+                documentationConfiguration(restDocumentation)
+                        .snippets()
+                        .withTemplateFormat(markdown())) // Rest Docs 생성 템플릿 지정
+                .build()
+    }
+
+    def "Request & Response 설명" () {
+        expect:
+        def requestDto = RequestDto.builder()
+                .age(32)
+                .name("jojoldu")
+                .email("jojoldu@gmail.com")
+                .build()
+
+        given(this.spec)
+                .accept("application/json")
+                .contentType(ContentType.JSON)
+                .filter(document( // document 메소드 인자값을 기준으로 Markdown 생성
+                "email-sample", // 현재 테스트로 생성되는 Markdown 파일들이 담길 디렉토리명
+                preprocessRequest(
+                        modifyUris() // 문서상 표기되는 URL과 Port 지정
+                                .host('api.jojoldu.tistory.com')
+                                .removePort()),
+                preprocessResponse(prettyPrint()),
+                requestFields( // request field 설명하는 Markdown 생성
+                        fieldWithPath('name').description('이름'),
+                        fieldWithPath('age').description('나이'),
+                        fieldWithPath('email').description('Email'),
+                        subsectionWithPath('tags').type(JsonFieldType.ARRAY).description('tag 목록')
+                ),
+                responseFields( // response field 설명하는 Markdown 생성
+                        fieldWithPath('status').description('응답 상태 코드'),
+                        fieldWithPath('message').description('응답 메세지'),
+                )))
+                .when()
+                .port(this.port)
+                .body(requestDto) // request body data
+                .post("/email") // request url
+                .then()
+                .assertThat().statusCode(is(200))
+                .assertThat().body("status", is("OK"))
+                .assertThat().body("message", is("jojoldu@gmail.com"))
+    }
+}
+```
+
+* 기본적으로 ```JUnitRestDocumentation```은 프로젝트의 빌드 도구를 기반으로 자동생성되는 파일들을 담을 디렉토리를 자동 지정합니다.
+  * maven: ```target/generated-snippets```
+  * gradle: ```build/generated-snippets```
+
+테스트 메소드 (```Request & Response 설명```) 코드가 실질적으로 자동생성되는 Markdown 내용이 담겨 있습니다.  
+
+* ```"email-sample"```
+  * 위 테스트 메소드 하나로 자동생성되는 Markdown 파일은 최소 5개 이상입니다.
+  * 이 마크다운 파일들이 담길 snippets 디렉토리명을 지정합니다.
+* ```requestFields```
+  * Request Body의 필드들 설명문을 자동생성해줍니다.
+  * description, type 등 다양한 내용을 담을 수 있습니다.
+  * 주의: DTO 필드명이 모두 명시되어있어야합니다. 누락될 경우 테스트가 깨집니다.
+* ```responseFields```
+  * Response Body의 필드들 설명문을 자동생성해줍니다.
+  * 사용법과 주의사항은 ```requestFields```와 동일합니다.
+
+> 좀 더 다양하고 자세한 문서를 만들고 싶으시면 [공식 API 문서](https://docs.spring.io/spring-restdocs/docs/current/reference/html5/#documenting-your-api)를 참고해보세요!
+
+자 이제 이 테스트 내용들을 ```api-guide.html```에 추가되야만 하는데요.  
+  
+api-guide.html을 담당하는 ```api-guide.html.md.erb```파일로 갑니다.  
+파일 최 하단에 다음과 같은 코드를 추가합니다.
+
+```markdown
+## 경로
+
+현재 위치의 절대 경로
+
+<%= File.expand_path("..") %>
+
+## Default Sample
+
+기본 요청
+
+<%= ERB.new(File.read("../build/generated-snippets/email-sample/request-fields.md")).result(binding) %>
+<%= ERB.new(File.read("../build/generated-snippets/email-sample/curl-request.md")).result(binding) %>
+<%= ERB.new(File.read("../build/generated-snippets/email-sample/http-request.md")).result(binding) %>
+<%= ERB.new(File.read("../build/generated-snippets/email-sample/http-response.md")).result(binding) %>
+
+
+### Response structure
+
+<%= ERB.new(File.read("../build/generated-snippets/email-sample/response-fields.md")).result(binding) %>
+<%= ERB.new(File.read("../build/generated-snippets/email-sample/response-body.md")).result(binding) %>
+```
+
+위에서 이야기한것처럼 Markdown은 **import 기능이 없습니다.**  
+이를 Ruby 템플릿엔진인 ERB의 템플릿 문법을 사용해서 추가하였습니다.  
+주의하실 것은 상대경로로 파일위치를 지정하였는데요.  
+상대경로의 기준은 **slate 디렉토리**입니다.
+즉, ```../build/generated-snippets```는 사실은 ```프로젝트폴더/build/generated-snippets```가 됩니다.
+
+> ```../```로 하면 slate 디렉토리의 상위 디렉토리인 프로젝트가 지정되기 때문입니다.
+
+자 본문에 테스트 코드로 자동생성되는 Markdown 파일들도 import 되었으니 다시한번 Build를 진행해보겠습니다.
+
+```bash
+./gradlew clean build
+```
+
+자 그리고 slate/build/api-guide.html 을 열어봅니다.  
+그러면!
+
+![slate5](./images/slate5.png)
+
+테스트 코드에 작성한 내용이 아주 잘 반영된 문서를 볼 수 있습니다!
 
 ## 5. 결론?
 

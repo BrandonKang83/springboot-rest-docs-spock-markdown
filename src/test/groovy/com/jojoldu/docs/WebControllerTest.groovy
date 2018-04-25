@@ -40,7 +40,7 @@ class WebControllerTest extends Specification {
                 .addFilter(
                 documentationConfiguration(restDocumentation)
                         .snippets()
-                        .withTemplateFormat(markdown()))
+                        .withTemplateFormat(markdown())) // Rest Docs 생성 템플릿 지정
                 .build()
     }
 
@@ -80,20 +80,20 @@ class WebControllerTest extends Specification {
         given(this.spec)
                 .accept("application/json")
                 .contentType(ContentType.JSON)
-                .filter(document(
-                "email-sample",
+                .filter(document( // document 메소드 인자값을 기준으로 Markdown 생성
+                "email-sample", // 현재 테스트로 생성되는 Markdown 파일들이 담길 디렉토리명
                 preprocessRequest(
-                        modifyUris()
+                        modifyUris() // 문서상 표기되는 URL과 Port 지정
                                 .host('api.jojoldu.tistory.com')
                                 .removePort()),
                 preprocessResponse(prettyPrint()),
-                requestFields(
+                requestFields( // request field 설명하는 Markdown 생성
                         fieldWithPath('name').description('이름'),
                         fieldWithPath('age').description('나이'),
                         fieldWithPath('email').description('Email'),
                         subsectionWithPath('tags').type(JsonFieldType.ARRAY).description('tag 목록')
                 ),
-                responseFields(
+                responseFields( // response field 설명하는 Markdown 생성
                         fieldWithPath('status').description('응답 상태 코드'),
                         fieldWithPath('message').description('응답 메세지'),
                 )))

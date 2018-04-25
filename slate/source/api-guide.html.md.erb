@@ -33,13 +33,14 @@ Method     | Usage
 
 기본 요청
 
-<%= ERB.new(File.read("../build/generated-snippets/default-sample/curl-request.md")).result(binding) %>
-<%= ERB.new(File.read("../build/generated-snippets/default-sample/http-request.md")).result(binding) %>
-<%= ERB.new(File.read("../build/generated-snippets/default-sample/http-response.md")).result(binding) %>
+<%= ERB.new(File.read("../build/generated-snippets/email-sample/request-fields.md")).result(binding) %>
+<%= ERB.new(File.read("../build/generated-snippets/email-sample/curl-request.md")).result(binding) %>
+<%= ERB.new(File.read("../build/generated-snippets/email-sample/http-request.md")).result(binding) %>
+<%= ERB.new(File.read("../build/generated-snippets/email-sample/http-response.md")).result(binding) %>
 
 
 ### Response structure
 
-<%= ERB.new(File.read("../build/generated-snippets/default-sample/response-fields.md")).result(binding) %>
-<%= ERB.new(File.read("../build/generated-snippets/default-sample/response-body.md")).result(binding) %>
+<%= ERB.new(File.read("../build/generated-snippets/email-sample/response-fields.md")).result(binding) %>
+<%= ERB.new(File.read("../build/generated-snippets/email-sample/response-body.md")).result(binding) %>
 
